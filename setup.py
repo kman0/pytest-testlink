@@ -2,18 +2,21 @@ __author__ = 'M'
 from setuptools import setup
 import codecs
 
-long_description = codecs.open("README.rst", encoding='utf-8').read()
+long_description = codecs.open("README.md", encoding='utf-8').read()
+
+VERSION = '0.1'
+PYPI_VERSION = '0.1'
 
 setup(
     name='pytest-testlink',
-    description=(
-        'pytest-testlink is a plugin for py.test that reports to testlink'
-    ),
+    packages = ['pytest-testlink'],
+    description='pytest-testlink is a plugin for py.test that reports to testlink',
     long_description=long_description,
-    version='0.1',
+    version=VERSION,
     url='https://github.com/manojklm/pytest-testlink/',
+    download_url='https://github.com/manojklm/pytest-testlink/tarball/%s' % PYPI_VERSION,
     license='MIT',
-    author='MK',
+    author='mk',
     author_email='manojklm@gmail.com',
     py_modules=['pytest_testlink'],
     entry_points={'pytest11': ['testlink = pytest_testlink']},
