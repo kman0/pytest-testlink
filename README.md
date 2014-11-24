@@ -1,4 +1,6 @@
-testlink-pytest
+pytest-testlink
 ===============
 
-Upload test results back to test link
+Upload test results to test link
+
+
