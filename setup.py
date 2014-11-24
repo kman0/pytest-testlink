@@ -1,0 +1,42 @@
+__author__ = 'M'
+from setuptools import setup
+import codecs
+
+long_description = codecs.open("README.rst", encoding='utf-8').read()
+
+setup(
+    name='pytest-testlink',
+    description=(
+        'pytest-testlink is a plugin for py.test that reports to testlink'
+    ),
+    long_description=long_description,
+    version='0.1',
+    url='https://github.com/manojklm/pytest-testlink/',
+    license='MIT',
+    author='MK',
+    author_email='manojklm@gmail.com',
+    py_modules=['pytest_testlink'],
+    entry_points={'pytest11': ['testlink = pytest_testlink']},
+    zip_safe=False,
+    include_package_data=True,
+    platforms='any',
+    install_requires=['pytest>=2.6'],
+    classifiers=[
+        'Environment :: Plugins',
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: POSIX',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: MacOS :: MacOS X',
+        'Topic :: Software Development :: Testing',
+        'Topic :: Software Development :: Libraries',
+        'Topic :: Utilities',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+    ]
+)
