@@ -9,7 +9,6 @@ PYPI_VERSION = '0.1'
 
 setup(
     name='pytest-testlink',
-    packages = ['pytest-testlink'],
     description='pytest-testlink is a plugin for py.test that reports to testlink',
     long_description=long_description,
     version=VERSION,
