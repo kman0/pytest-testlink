@@ -37,3 +37,16 @@ Uses ini file with test case external id and test node id as mapping
     test-2=test_pytest_testlink.py::test_pass[1]
     test-3=test_pytest_testlink.py::test_pass[2]
 
+
+####Todo:
+--platform -> add platform option to config/ini files
+
+--strict -> fail if missing mapping between test link and nodes
+
+--find-matching-tests -> lists tests with proper mapping
+
+--find-tests-with-no-mapping -> lists tests with no mapping
+
+-- query all builds and sort
+
+-- create a new build if required - auto increment
