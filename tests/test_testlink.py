@@ -45,3 +45,19 @@ def test_testlink_file_not_found(testdir):
     assert result.ret == 3
     result.stderr.fnmatch_lines_random("*FileNotFoundError: testlink_file: testlink.ini*")
 
+
+def test_testlink_conf_section_not_found(testdir):
+    init_ini(testdir)
+    init_pass(testdir)
+    testdir.tmpdir.ensure("testlink.ini").write("""[pytest]""")
+    result = testdir.runpytest(testdir.tmpdir)
+    assert result.ret == 3
+    result.stderr.fnmatch_lines_random('*section "testlink-conf" not found in ini file: testlink.ini*')
+
+def test_testlink_maps_section_not_found(testdir):
+    init_ini(testdir)
+    init_pass(testdir)
+    testdir.tmpdir.ensure("testlink.ini").write("""[testlink-conf]""")
+    result = testdir.runpytest(testdir.tmpdir)
+    assert result.ret == 0
+    result.stdout.fnmatch_lines_random('*section "testlink-maps" not found in ini file: testlink.ini*')
