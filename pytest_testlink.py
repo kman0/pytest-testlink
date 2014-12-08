@@ -7,10 +7,14 @@ testlink-python
 
 from __future__ import print_function
 from collections import defaultdict
-import configparser
+import sys
+if sys.version_info[0] < 3:
+    import ConfigParser as configparser
+    configparser.ConfigParser = configparser.SafeConfigParser
+else:
+    import configparser
 
 import os
-import sys
 import time
 import testlink
 from path import Path
