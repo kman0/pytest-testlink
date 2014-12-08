@@ -136,5 +136,15 @@ def pytest_configure(config):
     # load testlink-conf section
     load_testlink_ini_file(Path(config.inicfg['testlink_file']))
 
+
+def pytest_report_header(config, startdir):
+    if not config.option.testlink:
+        print('testlink: disabled by --no-testlink')
+    elif 'testlink_file' in config.inicfg:
+        print('testlink: %s' % config.inicfg['testlink_file'])
+    else:
+        print('testlink: "testlink_file" key was not found in [pytest] section')
+
+
 def pytest_runtest_logreport(report):
     print('Starting testlink processor for node: %s' % report.nodeid)
