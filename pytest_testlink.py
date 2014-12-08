@@ -54,8 +54,6 @@ class TLINK:
 # ini file processing
 ########################################################################################################################
 
-def load_testlink_ini_file(file_path):
-    global TLINK
     if not file_path.isfile():
         print("ERROR: testlink_file not found!")
         TLINK.disable_or_exit('FileNotFoundError: testlink_file: %s' % file_path)
@@ -70,8 +68,6 @@ def load_testlink_ini_file(file_path):
         TLINK.conf = TLINK.ini['testlink-conf']
     else:
         TLINK.disable_or_exit('section "testlink-conf" not found in ini file: %s' % file_path)
-    if not TLINK.enabled:
-        return
 
     # load testlink-maps section
     if 'testlink-maps' in TLINK.ini.sections():
@@ -79,12 +75,25 @@ def load_testlink_ini_file(file_path):
     else:
         print('section "testlink-maps" not found in ini file: %s' % file_path)
 
+
+def load_conf_section():
     missing_tl_keys = {k for k in TLINK.ini_required_keys if k not in TLINK.conf}
     if missing_tl_keys:
         TLINK.disable_or_exit('Missing testlink ini keys: %s' % missing_tl_keys)
-    if not TLINK.enabled:
-        return
 
+
+def load_maps_section():
+    node_dict = defaultdict(list)
+    for key, val in TLINK.maps.items():
+        node_dict[val].append(key)
+    duplicates = [x for x in node_dict if len(x) > 1]
+    if duplicates:
+        TLINK.disable_or_exit('Duplicate node ids in testlink maps: %s' % duplicates)
+
+
+########################################################################################################################
+# test link section
+########################################################################################################################
 
 def init_testlink(config):
     """Test link initialization"""
@@ -141,7 +150,25 @@ def pytest_configure(config):
         TLINK.exit_on_fail = True
 
     # load testlink-conf section
-    load_testlink_ini_file(Path(config.inicfg['testlink_file']))
+    load_testlink_file(Path(config.inicfg['testlink_file']))
+    if not TLINK.enabled:
+        return
+
+    load_conf_section()
+    if not TLINK.enabled:
+        return
+
+    load_maps_section()
+    if not TLINK.enabled:
+        return
+
+
+    # global NODE_MAP
+    # NODE_MAP = {}
+    # init_testlink(config)
+    # load_tl_maps_from_testlink()
+    # if 'tl_map_file' in config.inicfg:
+    #     load_tl_maps_from_ini(Path(config.inicfg['tl_map_file']))
 
 
 def pytest_report_header(config, startdir):

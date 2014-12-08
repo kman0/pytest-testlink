@@ -11,6 +11,7 @@ import time
 import pytest
 from pytest_testlink import TLINK
 
+
 def init_ini(testdir):
     testdir.tmpdir.ensure("pytest.ini").write("""[pytest]
 testlink_file=testlink.ini""")
@@ -70,6 +71,7 @@ def test_testlink_conf_section_not_found(testdir):
     result.stderr.fnmatch_lines_random('*section "testlink-conf" not found in ini file: testlink.ini*')
     result.stderr.fnmatch_lines_random("*INTERNALERROR*")
 
+
 def test_testlink_maps_section_not_found(testdir):
     init_ini(testdir)
     init_pass(testdir)
@@ -79,8 +81,6 @@ def test_testlink_maps_section_not_found(testdir):
     assert result.ret == 0
     result.stdout.fnmatch_lines_random("*1 passed*")
     result.stdout.fnmatch_lines_random('*section "testlink-maps" not found in ini file: testlink.ini*')
-
-
 
 
 @pytest.mark.parametrize(argnames="data",
@@ -100,3 +100,51 @@ def test_testlink_missing_key(testdir, data):
     assert result.ret == 3
     result.stderr.fnmatch_lines_random("*INTERNALERROR*")
     result.stderr.fnmatch_lines_random("*Missing testlink ini keys: {'%s'}*" % data)
+
+
+def test_ini_map_one_test(testdir):
+    init_ini(testdir)
+    init_pass(testdir)
+    testdir.tmpdir.ensure("testlink.ini").write("""[testlink-conf]\n%s""" %
+                                                ('\n'.join(k+"=dummy" for k in TLINK.ini_required_keys)) +
+                                                """\n[testlink-maps]
+                                                test-1=tests/test_testlink.py::test_ini_map
+                                                """)
+    result = testdir.runpytest(testdir.tmpdir)
+    assert result.ret == 0
+    result.stdout.fnmatch_lines_random("*1 passed*")
+
+
+def test_ini_map_duplicate_keys(testdir):
+    init_ini(testdir)
+    init_pass(testdir)
+    testdir.tmpdir.ensure("testlink.ini").write("""[testlink-conf]\n%s""" %
+                                                ('\n'.join(k+"=dummy" for k in TLINK.ini_required_keys)) +
+                                                """\n[testlink-maps]
+                                                test-1=tests/test_testlink.py::test_ini_map
+                                                test-1=tests/test_testlink.py::test_ini_map
+                                                """)
+    result = testdir.runpytest(testdir.tmpdir)
+    assert result.ret == 3
+    result.stderr.fnmatch_lines_random("*configparser.DuplicateOptionError*")
+    result.stderr.fnmatch_lines_random("*option 'test-1' in section 'testlink-maps' already exists*")
+
+
+def test_ini_map_duplicate_nodes(testdir):
+    init_ini(testdir)
+    init_pass(testdir)
+    testdir.tmpdir.ensure("testlink.ini").write("""[testlink-conf]\n%s""" %
+                                                ('\n'.join(k+"=dummy" for k in TLINK.ini_required_keys)) +
+                                                """\n[testlink-maps]
+                                                test-1=tests/test_testlink.py::test_ini_map
+                                                test-2=tests/test_testlink.py::test_ini_map
+                                                """)
+    result = testdir.runpytest(testdir.tmpdir)
+    assert result.ret == 0
+    result.stdout.fnmatch_lines_random("*Duplicate node ids in testlink maps: ['tests/test_testlink.py::test_ini_map'*")
+
+    result = testdir.runpytest('--testlink-exit-on-error', testdir.tmpdir)
+    assert result.ret == 3
+    result.stderr.fnmatch_lines_random("*INTERNALERROR*")
+    result.stderr.fnmatch_lines_random("*Duplicate node ids in testlink maps:*")
+
