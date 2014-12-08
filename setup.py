@@ -2,14 +2,14 @@ __author__ = 'M'
 from setuptools import setup
 import codecs
 
-long_description = codecs.open("README.md", encoding='utf-8').read()
+long_description = 'pytest-testlink is a plugin for py.test that reports to testlink'
 
-VERSION = '0.1'
-PYPI_VERSION = '0.1'
+VERSION = '0.2'
+PYPI_VERSION = '0.2'
 
 setup(
     name='pytest-testlink',
-    description='pytest-testlink is a plugin for py.test that reports to testlink',
+    description=long_description,
     long_description=long_description,
     version=VERSION,
     url='https://github.com/manojklm/pytest-testlink/',
