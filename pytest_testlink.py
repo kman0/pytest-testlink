@@ -139,6 +139,18 @@ def init_testlink(config):
         plan_name = [tp for tp in TLINK.rpc.getProjectTestPlans(TLINK.project_id) if tp['name'] == TLINK.conf['test_plan']]
     TLINK.test_plan_id = plan_name[0]['id']
 
+    # create test build if required
+    TLINK.test_build = [tb for tb in TLINK.rpc.getBuildsForTestPlan(TLINK.test_plan_id)
+                            if tb['name'] == TLINK.conf['build_name']]
+    if not TLINK.test_build:
+        TLINK.rpc.createBuild(int(TLINK.test_plan_id), TLINK.conf['build_name'],
+                        'Automated test. Created by mf_testlink plugin.')
+        TLINK.test_build = [tb for tb in TLINK.rpc.getBuildsForTestPlan(TLINK.test_plan_id)
+                                if tb['name'] == TLINK.conf['build_name']]
+    TLINK.test_build_id = TLINK.test_build[0]['id']
+    print(TLINK.test_build_id)
+
+
 ########################################################################################################################
 # py test hooks
 ########################################################################################################################
