@@ -206,5 +206,26 @@ def pytest_report_header(config, startdir):
     if config.option.testlink_exit_on_fail:
         print('testlink: exit on failure enabled!')
 
+
 def pytest_runtest_logreport(report):
+    print (report.nodeid)
+    if not TLINK.enabled:
+        return
     print('Starting testlink processor for node: %s' % report.nodeid)
+    if report.nodeid in TLINK.nodes:
+        print('External id found for node!')
+
+    status = ''
+    if report.passed:
+        # ignore setup/teardown
+        if report.when == "call":
+            status = 'p'
+    elif report.failed:
+        status = 'f'
+    elif report.skipped:
+        status = 'b'
+    if status:
+        TLINK.rpc.reportTCResult(testplanid=TLINK.test_plan_id,
+                                 buildid=TLINK.test_build_id,
+                                 status=status,
+                                 testcaseexternalid=TLINK.nodes[report.nodeid])
