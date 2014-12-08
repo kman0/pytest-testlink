@@ -119,7 +119,25 @@ def init_testlink(config):
     # connect to test link
     TLINK.rpc = testlink.TestlinkAPIClient(server_url=TLINK.conf['xmlrpc_url'], devKey=TLINK.conf['api_key'])
 
+    # assert test project exists
+    _test_project = TLINK.rpc.getTestProjectByName(TLINK.conf['project'])
+    if not _test_project:
+        TLINK.disable_or_exit('Invalid tl_project name. Unable to find project')
+        return
 
+    # get project id and prefix
+    TLINK.project_id = _test_project['id']
+    TLINK.project_prefix = _test_project['prefix']
+
+    # list of test plans
+    plans = {plan['id']: plan for plan in TLINK.rpc.getProjectTestPlans(TLINK.project_id)}
+
+    # create test plan if required
+    plan_name = [tp for tp in TLINK.rpc.getProjectTestPlans(TLINK.project_id) if tp['name'] == TLINK.conf['test_plan']]
+    if not plan_name:
+        TLINK.rpc.createTestPlan(TLINK.conf['test_plan'], TLINK.conf['project'])
+        plan_name = [tp for tp in TLINK.rpc.getProjectTestPlans(TLINK.project_id) if tp['name'] == TLINK.conf['test_plan']]
+    TLINK.test_plan_id = plan_name[0]['id']
 
 ########################################################################################################################
 # py test hooks
