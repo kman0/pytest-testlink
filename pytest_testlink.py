@@ -17,63 +17,66 @@ from path import Path
 import pytest
 
 
-class TestLink:
-    # todo: move class up to module
-    plugin_name = "pytest_testlink"
-    tl_ini_required_keys = ['tl_url', 'tl_api_key', 'tl_project', 'tl_test_plan', 'tl_build_name']
+PLUGIN_NAME = "pytest_testlink"
 
-    node_id_lookup = {}
-    ext_id_lookup = {}
 
-    automated_tests = {}
-    automated_tests_ref = {}
-    pytest_node_ids = {}
-    duplicate_pytest_nodes = set()
+class TLINK:
+    # globals
+    enabled = True
+    exit_on_fail = False
+
+    ini = configparser.ConfigParser()
+    ini_required_keys = ['xmlrpc_url', 'api_key', 'project', 'test_plan', 'build_name']
+    ini_optional = ['new_build', 'reference_test_plan', 'custom_field']
+    maps = []
+    conf = []
+
 
     def __str__(self):
-        return self.plugin_name
+        return PLUGIN_NAME
 
     def __repr__(self):
-        return self.plugin_name
-
-    @staticmethod
-    def get_automated_tests_for_test_plan():
-        return TestLink.get_automated_tests([TestLink.test_plan_id])
+        return PLUGIN_NAME
 
     @classmethod
-    def get_automated_tests(cls, test_plans_list):
-        return_dict = {}
-        for _tp in test_plans_list:
-            _tmp_tests = cls._tl.getTestCasesForTestPlan(_tp, execution='2', active='1')
-            if _tmp_tests:
-                return_dict.update({key: val for key, val in _tmp_tests.items()})
-        return return_dict
+    def disable(cls):
+        print('WARNING: %s plugin will be disabled!' % PLUGIN_NAME)
+        cls.enabled = False
 
-    @classmethod
-    def lookup_pytest_node(cls, pytest_node):
-        """
 
-        :param pytest_node:
-        :return:
-        """
-        return cls.pytest_node_ids[pytest_node]
+def load_testlink_ini_file(file_path):
+    global TLINK
+    if not file_path.isfile():
+        print("ERROR: testlink_file not found!")
+        TLINK.disable()
+        if TLINK.exit_on_fail:
+            raise FileNotFoundError('testlink_file: %s' % file_path)
 
-EXT_ID_MAP = {
+    # read ini file
+    TLINK.ini.read(file_path)
 
-}
+    # load testlink-conf section
+    if 'testlink-conf' in TLINK.ini.sections():
+        TLINK.conf = TLINK.ini['testlink-conf']
+    else:
+        TLINK.enabled = False
+        raise Exception('section "testlink-conf" not found in ini file: %s' % file_path)
 
-NODE_ID_MAP = {
-    'test-3': 'stest_pytest_testlink.py::test_pass[2]'
-}
+    # load testlink-maps section
+    if 'testlink-maps' in TLINK.ini.sections():
+        TLINK.maps = TLINK.ini['testlink-maps']
+    else:
+        print('section "testlink-maps" not found in ini file: %s' % file_path)
+
+    missing_tl_keys = {k for k in TLINK.ini_required_keys if k not in TLINK.conf}
+    if missing_tl_keys:
+        print('ERROR: Missing testlink ini keys: %s' % missing_tl_keys)
+        TLINK.enabled = False
+        return None
 
 
 def init_testlink(config):
     """Test link initialization"""
-    missing_tl_keys = {k for k in TestLink.tl_ini_required_keys if k not in config.inicfg}
-    if missing_tl_keys:
-        print('ERROR: Missing testlink ini keys: %s' % missing_tl_keys)
-        print('WARNING: %s plugin will be disabled!' % TestLink.plugin_name)
-        return None
 
     def process_config_env_value(key):
         if config.inicfg[key].strip().startswith('$'):
@@ -87,47 +90,14 @@ def init_testlink(config):
         else:
             return default
 
-    TestLink.testlink_url = config.inicfg['tl_url']
-    TestLink.dev_api_key = config.inicfg['tl_api_key']
-    TestLink.project_name = config.inicfg['tl_project']
+    TLINK.testlink_url = config.inicfg['tl_url']
+    TLINK.dev_api_key = config.inicfg['tl_api_key']
+    TLINK.project_name = config.inicfg['tl_project']
 
-    TestLink.plan_name = process_config_env_value('tl_test_plan')
-    TestLink.build_name = process_config_env_value('tl_build_name')
-    TestLink.plan_ref = process_config_default_value('tl_reference_test_plan', None)
-    TestLink.custom_field_name = process_config_default_value('tl_custom_field', 'pytest_node')
-
-
-def connect_and_assert_testlink_args():
-
-    # connect to test link
-    _tl = testlink.TestlinkAPIClient(server_url=TestLink.testlink_url, devKey=TestLink.dev_api_key)
-    TestLink._tl = _tl
-
-
-def load_tl_maps_from_testlink():
-    pass
-
-
-def load_tl_maps_from_ini(ini_path):
-    if not ini_path.isfile():
-        raise FileNotFoundError('ini file: %s' % ini_path)
-    con = configparser.ConfigParser(allow_no_value=True)
-    con.read(ini_path)
-    if 'testlink-maps' not in con.sections():
-        raise KeyError('testlink-maps section not found in ini file: %s ' % ini_path.abspath())
-    _errors = []
-    for k, v in con['testlink-maps'].items():
-        if k.strip() not in NODE_MAP:
-            NODE_MAP[k.strip()] = v.strip()
-        elif v.strip() == NODE_MAP[k.strip()]:
-            continue
-        else:
-            _errors.append('Mismatch - \n\tnode id from testlink: %s' % NODE_MAP[k.strip()] +
-                           '\n\tnode id from ini file: %s' % v.strip())
-    if _errors:
-        print('\n'.join(_errors))
-        raise KeyError('Errors/Duplicates while loading keys from maps file')
-        # print(TL_NODE_MAP)
+    TLINK.plan_name = process_config_env_value('tl_test_plan')
+    TLINK.build_name = process_config_env_value('tl_build_name')
+    TLINK.plan_ref = process_config_default_value('tl_reference_test_plan', None)
+    TLINK.custom_field_name = process_config_default_value('tl_custom_field', 'pytest_node')
 
 
 ########################################################################################################################
@@ -137,30 +107,30 @@ def load_tl_maps_from_ini(ini_path):
 
 def pytest_addoption(parser):
     """Add all the required ini and command line options here"""
-    parser.addini('tl_url', 'http://[test link server]/testlink/lib/api/xmlrpc.php')
-    parser.addini('tl_api_key', 'Testlink->My Settings->API interface->Generate Key')
-    parser.addini('tl_project', 'Project name in test link')
-    parser.addini('tl_test_plan', 'Prefix $ to pick from environment variable.')
-    parser.addini('tl_build_name', 'Prefix $ to pick from environment variable.')
-    parser.addini('tl_custom_field', '[pytest_node]unique custom_field')
-
-    parser.addini('tl_reference_test_plan', 'Test plan with all tests added.')
-    parser.addini('tl_fail_hard', 'optional [False] True errors on testlink failures')
-    parser.addini('tl_new_build', 'optional [False] True creates a new build')
+    parser.addoption(
+        '--no-testlink', action="store_false", dest="testlink", default=True,
+        help="disable pytest-testlink"
+    )
+    parser.addoption(
+        '--testlink-exit-on-error', action="store_false", dest="testlink_exit_on_fail", default=False,
+        help="exit on any test link plugin related errors/exceptions"
+    )
+    parser.addini('testlink_file', 'Location of testlink configuration ini file.')
 
 
 def pytest_configure(config):
+    if not config.option.testlink:
+        TLINK.enabled = False
+        return
+    if 'testlink_file' not in config.inicfg:
+        TLINK.enabled = False
+        return
 
-    global NODE_MAP
-    NODE_MAP = {}
-    init_testlink(config)
-    load_tl_maps_from_testlink()
-    if 'tl_map_file' in config.inicfg:
-        load_tl_maps_from_ini(Path(config.inicfg['tl_map_file']))
+    if config.option.testlink_exit_on_fail:
+        TLINK.exit_on_fail = True
 
+    # load testlink-conf section
+    load_testlink_ini_file(Path(config.inicfg['testlink_file']))
 
 def pytest_runtest_logreport(report):
-    print(report.nodeid)
-    if report.nodeid in NODE_MAP:
-        print()
-
+    print('Starting testlink processor for node: %s' % report.nodeid)
