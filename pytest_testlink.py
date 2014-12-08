@@ -33,8 +33,11 @@ class TLINK:
     ini = configparser.ConfigParser()
     ini_required_keys = ['xmlrpc_url', 'api_key', 'project', 'test_plan', 'build_name']
     ini_optional = ['new_build', 'reference_test_plan', 'custom_field']
-    maps = []
-    conf = []
+    nodes = defaultdict(list)
+    maps = {}
+    conf = {}
+
+    rpc = testlink.TestlinkAPIClient
 
 
     def __str__(self):
@@ -53,7 +56,7 @@ class TLINK:
 ########################################################################################################################
 # ini file processing
 ########################################################################################################################
-
+def load_testlink_file(file_path):
     if not file_path.isfile():
         print("ERROR: testlink_file not found!")
         TLINK.disable_or_exit('FileNotFoundError: testlink_file: %s' % file_path)
@@ -76,19 +79,33 @@ class TLINK:
         print('section "testlink-maps" not found in ini file: %s' % file_path)
 
 
-def load_conf_section():
+def load_conf_section(config):
+    def process_config_env_value(key):
+        if TLINK.conf[key].strip().startswith('$'):
+            return os.environ[TLINK.conf[key][1:]]
+        else:
+            return TLINK.conf[key]
     missing_tl_keys = {k for k in TLINK.ini_required_keys if k not in TLINK.conf}
     if missing_tl_keys:
         TLINK.disable_or_exit('Missing testlink ini keys: %s' % missing_tl_keys)
+    else:
+        temp_dict = {}
+        for conf_key, conf_val in TLINK.conf.items():
+            temp_dict[conf_key] = process_config_env_value(conf_key)
+        for k, v in temp_dict.items():
+            TLINK.conf[k] = v
 
 
 def load_maps_section():
     node_dict = defaultdict(list)
     for key, val in TLINK.maps.items():
         node_dict[val].append(key)
-    duplicates = [x for x in node_dict if len(x) > 1]
+    duplicates = [x for x in node_dict if len(node_dict[x]) != 1]
     if duplicates:
         TLINK.disable_or_exit('Duplicate node ids in testlink maps: %s' % duplicates)
+        return
+    # construct the nodes dict
+    TLINK.nodes = {v: k for k, v in TLINK.maps.items()}
 
 
 ########################################################################################################################
@@ -97,34 +114,16 @@ def load_maps_section():
 
 def init_testlink(config):
     """Test link initialization"""
+    if not TLINK.enabled:
+        return
+    # connect to test link
+    TLINK.rpc = testlink.TestlinkAPIClient(server_url=TLINK.conf['xmlrpc_url'], devKey=TLINK.conf['api_key'])
 
-    def process_config_env_value(key):
-        if config.inicfg[key].strip().startswith('$'):
-            return os.environ[config.inicfg[key][1:]]
-        else:
-            return config.inicfg[key]
-
-    def process_config_default_value(key, default):
-        if key in config.inicfg:
-            return config.inicfg[key]
-        else:
-            return default
-
-    TLINK.testlink_url = config.inicfg['tl_url']
-    TLINK.dev_api_key = config.inicfg['tl_api_key']
-    TLINK.project_name = config.inicfg['tl_project']
-
-    TLINK.plan_name = process_config_env_value('tl_test_plan')
-    TLINK.build_name = process_config_env_value('tl_build_name')
-    TLINK.plan_ref = process_config_default_value('tl_reference_test_plan', None)
-    TLINK.custom_field_name = process_config_default_value('tl_custom_field', 'pytest_node')
 
 
 ########################################################################################################################
 # py test hooks
 ########################################################################################################################
-
-
 def pytest_addoption(parser):
     """Add all the required ini and command line options here"""
     parser.addoption(
@@ -154,21 +153,16 @@ def pytest_configure(config):
     if not TLINK.enabled:
         return
 
-    load_conf_section()
+    load_conf_section(config)
     if not TLINK.enabled:
         return
 
     load_maps_section()
-    if not TLINK.enabled:
+    if not TLINK.nodes:
+        TLINK.disable_or_exit("No nodes found!")
         return
 
-
-    # global NODE_MAP
-    # NODE_MAP = {}
-    # init_testlink(config)
-    # load_tl_maps_from_testlink()
-    # if 'tl_map_file' in config.inicfg:
-    #     load_tl_maps_from_ini(Path(config.inicfg['tl_map_file']))
+    init_testlink(config)
 
 
 def pytest_report_header(config, startdir):
