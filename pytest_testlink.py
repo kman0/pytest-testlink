@@ -19,6 +19,7 @@ import time
 import testlink
 from path import Path
 import pytest
+from testlink import TestLinkError
 
 
 PLUGIN_NAME = "pytest_testlink"
@@ -43,18 +44,23 @@ class TLINK:
         return PLUGIN_NAME
 
     @classmethod
-    def disable(cls):
-        print('WARNING: %s plugin will be disabled!' % PLUGIN_NAME)
+    def disable_or_exit(cls, err_msg):
+        print('testlink: disabled! %s' % err_msg)
         cls.enabled = False
+        if cls.exit_on_fail:
+            raise TestLinkError(err_msg)
 
+########################################################################################################################
+# ini file processing
+########################################################################################################################
 
 def load_testlink_ini_file(file_path):
     global TLINK
     if not file_path.isfile():
         print("ERROR: testlink_file not found!")
-        TLINK.disable()
-        if TLINK.exit_on_fail:
-            raise FileNotFoundError('testlink_file: %s' % file_path)
+        TLINK.disable_or_exit('FileNotFoundError: testlink_file: %s' % file_path)
+    if not TLINK.enabled:
+        return
 
     # read ini file
     TLINK.ini.read(file_path)
@@ -63,8 +69,9 @@ def load_testlink_ini_file(file_path):
     if 'testlink-conf' in TLINK.ini.sections():
         TLINK.conf = TLINK.ini['testlink-conf']
     else:
-        TLINK.enabled = False
-        raise Exception('section "testlink-conf" not found in ini file: %s' % file_path)
+        TLINK.disable_or_exit('section "testlink-conf" not found in ini file: %s' % file_path)
+    if not TLINK.enabled:
+        return
 
     # load testlink-maps section
     if 'testlink-maps' in TLINK.ini.sections():
@@ -74,9 +81,9 @@ def load_testlink_ini_file(file_path):
 
     missing_tl_keys = {k for k in TLINK.ini_required_keys if k not in TLINK.conf}
     if missing_tl_keys:
-        print('ERROR: Missing testlink ini keys: %s' % missing_tl_keys)
-        TLINK.enabled = False
-        return None
+        TLINK.disable_or_exit('Missing testlink ini keys: %s' % missing_tl_keys)
+    if not TLINK.enabled:
+        return
 
 
 def init_testlink(config):
@@ -116,7 +123,7 @@ def pytest_addoption(parser):
         help="disable pytest-testlink"
     )
     parser.addoption(
-        '--testlink-exit-on-error', action="store_false", dest="testlink_exit_on_fail", default=False,
+        '--testlink-exit-on-error', action="store_true", dest="testlink_exit_on_fail", default=False,
         help="exit on any test link plugin related errors/exceptions"
     )
     parser.addini('testlink_file', 'Location of testlink configuration ini file.')
@@ -145,6 +152,8 @@ def pytest_report_header(config, startdir):
     else:
         print('testlink: "testlink_file" key was not found in [pytest] section')
 
+    if config.option.testlink_exit_on_fail:
+        print('testlink: exit on failure enabled!')
 
 def pytest_runtest_logreport(report):
     print('Starting testlink processor for node: %s' % report.nodeid)
