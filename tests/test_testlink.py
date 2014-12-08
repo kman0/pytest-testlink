@@ -184,3 +184,38 @@ def test_ini_map_duplicate_nodes(testdir):
     result.stderr.fnmatch_lines_random("*INTERNALERROR*")
     result.stderr.fnmatch_lines_random("*Duplicate node ids in testlink maps:*")
 
+
+def test_ini_map_no_nodes(testdir):
+    init_ini(testdir)
+    init_pass(testdir)
+    testdir.tmpdir.ensure("testlink.ini").write("""[testlink-conf]\n%s""" %
+                                                ('\n'.join(k+"=dummy" for k in TLINK.ini_required_keys)) +
+                                                """\n[testlink-maps]""")
+    result = testdir.runpytest(testdir.tmpdir)
+    assert result.ret == 0
+    result.stdout.fnmatch_lines_random("*No nodes found*")
+
+    result = testdir.runpytest('--testlink-exit-on-error', testdir.tmpdir)
+    assert result.ret == 3
+    result.stderr.fnmatch_lines_random("*INTERNALERROR*")
+    result.stderr.fnmatch_lines_random("*No nodes found!*")
+
+
+def test_1(testdir):
+    init_ini(testdir)
+
+
+def test_2():
+    assert 0
+
+def test_3():
+    pytest.skip()
+
+@pytest.mark.xfail
+def test_4():
+    assert 0
+
+@pytest.mark.xfail
+def test_5():
+    assert 1
+
