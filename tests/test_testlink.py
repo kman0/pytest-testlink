@@ -81,3 +81,22 @@ def test_testlink_maps_section_not_found(testdir):
     result.stdout.fnmatch_lines_random('*section "testlink-maps" not found in ini file: testlink.ini*')
 
 
+
+
+@pytest.mark.parametrize(argnames="data",
+                         argvalues=TLINK.ini_required_keys)
+def test_testlink_missing_key(testdir, data):
+    init_ini(testdir)
+    init_pass(testdir)
+    keys = set(TLINK.ini_required_keys)
+    keys.remove(data)
+    testdir.tmpdir.ensure("testlink.ini").write("""[testlink-conf]\n%s""" % ('\n'.join(k+"=dummy" for k in keys)))
+    print(open("testlink.ini").read())
+    result = testdir.runpytest(testdir.tmpdir)
+    assert result.ret == 0
+    result.stdout.fnmatch_lines_random("*Missing testlink ini keys: {'%s'}*" % data)
+
+    result = testdir.runpytest('--testlink-exit-on-error', testdir.tmpdir)
+    assert result.ret == 3
+    result.stderr.fnmatch_lines_random("*INTERNALERROR*")
+    result.stderr.fnmatch_lines_random("*Missing testlink ini keys: {'%s'}*" % data)
