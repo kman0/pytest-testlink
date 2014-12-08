@@ -41,23 +41,43 @@ def test_no_configure_print(testdir):
 def test_testlink_file_not_found(testdir):
     init_ini(testdir)
     init_pass(testdir)
+
     result = testdir.runpytest(testdir.tmpdir)
+    assert result.ret == 0
+    result.stdout.fnmatch_lines_random("*FileNotFoundError: testlink_file: testlink.ini*")
+    result.stdout.fnmatch_lines_random("*1 passed*")
+
+    result = testdir.runpytest('--testlink-exit-on-error', testdir.tmpdir)
+    # result.stdout.fnmatch_lines_random("*testlink: exit on failure enabled!*")
     assert result.ret == 3
     result.stderr.fnmatch_lines_random("*FileNotFoundError: testlink_file: testlink.ini*")
+    result.stderr.fnmatch_lines_random("*INTERNALERROR*")
 
 
 def test_testlink_conf_section_not_found(testdir):
     init_ini(testdir)
     init_pass(testdir)
     testdir.tmpdir.ensure("testlink.ini").write("""[pytest]""")
+
     result = testdir.runpytest(testdir.tmpdir)
+    assert result.ret == 0
+    result.stdout.fnmatch_lines_random("*1 passed*")
+    result.stdout.fnmatch_lines_random('*section "testlink-conf" not found in ini file: testlink.ini*')
+
+    result = testdir.runpytest('--testlink-exit-on-error', testdir.tmpdir)
+    # result.stdout.fnmatch_lines_random("*testlink: exit on failure enabled!*")
     assert result.ret == 3
     result.stderr.fnmatch_lines_random('*section "testlink-conf" not found in ini file: testlink.ini*')
+    result.stderr.fnmatch_lines_random("*INTERNALERROR*")
 
 def test_testlink_maps_section_not_found(testdir):
     init_ini(testdir)
     init_pass(testdir)
     testdir.tmpdir.ensure("testlink.ini").write("""[testlink-conf]""")
+
     result = testdir.runpytest(testdir.tmpdir)
     assert result.ret == 0
+    result.stdout.fnmatch_lines_random("*1 passed*")
     result.stdout.fnmatch_lines_random('*section "testlink-maps" not found in ini file: testlink.ini*')
+
+
