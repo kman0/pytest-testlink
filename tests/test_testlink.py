@@ -12,6 +12,10 @@ import pytest
 from pytest_testlink import TLINK
 
 
+DEMO_XMLRPC = "http://demo.testlink.org/latest/lib/api/xmlrpc/v1/xmlrpc.php"
+DEMO_APIKEY = "583e35fa07bd59e81048640f5cee1897"
+
+
 def init_ini(testdir):
     testdir.tmpdir.ensure("pytest.ini").write("""[pytest]
 testlink_file=testlink.ini""")
@@ -22,6 +26,38 @@ def init_pass(testdir):
     import pytest
     def test_pass(): assert 1
     """)
+
+
+def init_tests(testdir):
+    testdir.makepyfile("""
+    import pytest
+    def test_1(): assert 1
+    def test_2(): assert 0
+    def test_3(): pytest.skip()
+    @pytest.mark.xfail
+    def test_4(): assert 0
+    @pytest.mark.xfail
+    def test_5(): assert 1
+    """)
+
+def init_testlink(testdir):
+    testdir.tmpdir.ensure("testlink.ini").write("""
+[testlink-conf]
+xmlrpc_url=""" + DEMO_XMLRPC + """
+api_key=""" + DEMO_APIKEY + """
+project=TS
+test_plan=Automation
+build_name=1
+
+[testlink-maps]
+ts-1=tests/test_testlink.py::test_1
+ts-2=tests/test_testlink.py::test_2
+ts-3=tests/test_testlink.py::test_3
+ts-4=tests/test_testlink.py::test_4
+ts-5=tests/test_testlink.py::test_5
+"""
+    )
+
 
 
 # # Tests
