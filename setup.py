@@ -22,7 +22,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
-    install_requires=['pytest>=2.6'],
+    install_requires=['pytest>=2.6', 'TestLink-API-Python-client>=0.6'],
     classifiers=[
         'Environment :: Plugins',
         'Development Status :: 2 - Pre-Alpha',
