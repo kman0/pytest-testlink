@@ -208,12 +208,12 @@ def pytest_report_header(config, startdir):
 
 
 def pytest_runtest_logreport(report):
-    print (report.nodeid)
     if not TLINK.enabled:
         return
-    print('Starting testlink processor for node: %s' % report.nodeid)
-    if report.nodeid in TLINK.nodes:
-        print('External id found for node!')
+
+    if report.nodeid not in TLINK.nodes:
+        print('External id not found for node: %s' % report.nodeid)
+        return
 
     status = ''
     if report.passed:
