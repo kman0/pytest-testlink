@@ -225,7 +225,12 @@ def pytest_runtest_logreport(report):
     elif report.skipped:
         status = 'b'
     if status:
-        TLINK.rpc.reportTCResult(testplanid=TLINK.test_plan_id,
-                                 buildid=TLINK.test_build_id,
-                                 status=status,
-                                 testcaseexternalid=TLINK.nodes[report.nodeid])
+        try:
+            TLINK.rpc.reportTCResult(testplanid=TLINK.test_plan_id,
+                                     buildid=TLINK.test_build_id,
+                                     status=status,
+                                     testcaseexternalid=TLINK.nodes[report.nodeid])
+        except TestLinkError as exc:
+            print('testlink: WARNING: Unable to update result for node: %s' % report.nodeid)
+            print('testlink: Mostly, the test case is not linked to test plan!')
+            print(exc)
