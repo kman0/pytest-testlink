@@ -211,9 +211,6 @@ def pytest_runtest_logreport(report):
     if not TLINK.enabled:
         return
 
-    if report.nodeid not in TLINK.nodes:
-        print('External id not found for node: %s' % report.nodeid)
-        return
 
     status = ''
     if report.passed:
@@ -226,6 +223,9 @@ def pytest_runtest_logreport(report):
         status = 'b'
     if status:
         try:
+            if report.nodeid not in TLINK.nodes:
+                print('testlink: WARNING; External id not found for node: %s' % report.nodeid)
+                return
             TLINK.rpc.reportTCResult(testplanid=TLINK.test_plan_id,
                                      buildid=TLINK.test_build_id,
                                      status=status,
