@@ -224,13 +224,13 @@ def pytest_runtest_logreport(report):
     if status:
         try:
             if report.nodeid not in TLINK.nodes:
-                print('testlink: WARNING; External id not found for node: %s' % report.nodeid)
+                print('testlink: WARN: ext-id not found: %s' % report.nodeid)
                 return
             TLINK.rpc.reportTCResult(testplanid=TLINK.test_plan_id,
                                      buildid=TLINK.test_build_id,
                                      status=status,
                                      testcaseexternalid=TLINK.nodes[report.nodeid])
         except TestLinkError as exc:
-            print('testlink: WARNING: Unable to update result for node: %s' % report.nodeid)
-            print('testlink: Mostly, the test case is not linked to test plan!')
+            print('testlink: WARN: Unable to update result: %s' % report.nodeid)
+            print('testlink: Check if the test case is not linked to test plan!')
             print(exc)
