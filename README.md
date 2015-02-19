@@ -50,3 +50,7 @@ Uses ini file with test case external id and test node id as mapping
 -- query all builds and sort
 
 -- create a new build if required - auto increment
+
+###Changes:
+
+0.3 2/20/2015 - Support for 1.9.3 

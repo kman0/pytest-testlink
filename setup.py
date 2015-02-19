@@ -4,8 +4,8 @@ import codecs
 
 long_description = 'pytest-testlink is a plugin for py.test that reports to testlink'
 
-VERSION = '0.2'
-PYPI_VERSION = '0.2'
+VERSION = '0.3'
+PYPI_VERSION = '0.3'
 
 setup(
     name='pytest-testlink',
