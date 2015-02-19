@@ -129,6 +129,9 @@ def init_testlink():
         TLINK.disable_or_exit('Invalid tl_project name. Unable to find project')
         return
 
+    # type convert from list for older testlink instances
+    _test_project = _test_project[0] if isinstance(_test_project, list) else _test_project
+
     # get project id and prefix
     TLINK.project_id = _test_project['id']
     TLINK.project_prefix = _test_project['prefix']
