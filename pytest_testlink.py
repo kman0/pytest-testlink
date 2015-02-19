@@ -8,8 +8,10 @@ testlink-python
 from __future__ import print_function
 from collections import defaultdict
 import sys
+
 if sys.version_info[0] < 3:
     import ConfigParser as configparser
+
     configparser.ConfigParser = configparser.SafeConfigParser
 else:
     import configparser
@@ -53,6 +55,7 @@ class TLINK:
         if cls.exit_on_fail:
             raise TestLinkError(err_msg)
 
+
 ########################################################################################################################
 # ini file processing
 ########################################################################################################################
@@ -85,6 +88,7 @@ def load_conf_section():
             return os.environ[TLINK.conf[key][1:]]
         else:
             return TLINK.conf[key]
+
     missing_tl_keys = {k for k in TLINK.ini_required_keys if k not in TLINK.conf}
     if missing_tl_keys:
         TLINK.disable_or_exit('Missing testlink ini keys: %s' % missing_tl_keys)
@@ -136,17 +140,18 @@ def init_testlink():
     plan_name = [tp for tp in TLINK.rpc.getProjectTestPlans(TLINK.project_id) if tp['name'] == TLINK.conf['test_plan']]
     if not plan_name:
         TLINK.rpc.createTestPlan(TLINK.conf['test_plan'], TLINK.conf['project'])
-        plan_name = [tp for tp in TLINK.rpc.getProjectTestPlans(TLINK.project_id) if tp['name'] == TLINK.conf['test_plan']]
+        plan_name = [tp for tp in TLINK.rpc.getProjectTestPlans(TLINK.project_id) if
+                     tp['name'] == TLINK.conf['test_plan']]
     TLINK.test_plan_id = plan_name[0]['id']
 
     # create test build if required
     TLINK.test_build = [tb for tb in TLINK.rpc.getBuildsForTestPlan(TLINK.test_plan_id)
-                            if tb['name'] == TLINK.conf['build_name']]
+                        if tb['name'] == TLINK.conf['build_name']]
     if not TLINK.test_build:
         TLINK.rpc.createBuild(int(TLINK.test_plan_id), TLINK.conf['build_name'],
-                        'Automated test. Created by mf_testlink plugin.')
+                              'Automated test. Created by mf_testlink plugin.')
         TLINK.test_build = [tb for tb in TLINK.rpc.getBuildsForTestPlan(TLINK.test_plan_id)
-                                if tb['name'] == TLINK.conf['build_name']]
+                            if tb['name'] == TLINK.conf['build_name']]
     TLINK.test_build_id = TLINK.test_build[0]['id']
     print(TLINK.test_build_id)
 
@@ -210,7 +215,6 @@ def pytest_report_header(config, startdir):
 def pytest_runtest_logreport(report):
     if not TLINK.enabled:
         return
-
 
     status = ''
     if report.passed:
