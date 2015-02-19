@@ -79,7 +79,7 @@ def load_testlink_file(file_path):
         print('section "testlink-maps" not found in ini file: %s' % file_path)
 
 
-def load_conf_section(config):
+def load_conf_section():
     def process_config_env_value(key):
         if TLINK.conf[key].strip().startswith('$'):
             return os.environ[TLINK.conf[key][1:]]
@@ -112,7 +112,7 @@ def load_maps_section():
 # test link section
 ########################################################################################################################
 
-def init_testlink(config):
+def init_testlink():
     """Test link initialization"""
     if not TLINK.enabled:
         return
@@ -183,7 +183,7 @@ def pytest_configure(config):
     if not TLINK.enabled:
         return
 
-    load_conf_section(config)
+    load_conf_section()
     if not TLINK.enabled:
         return
 
@@ -192,7 +192,7 @@ def pytest_configure(config):
         TLINK.disable_or_exit("No nodes found!")
         return
 
-    init_testlink(config)
+    init_testlink()
 
 
 def pytest_report_header(config, startdir):
